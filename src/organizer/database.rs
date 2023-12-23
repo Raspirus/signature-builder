@@ -1,5 +1,3 @@
-
-
 use log::trace;
 use rusqlite::params;
 
