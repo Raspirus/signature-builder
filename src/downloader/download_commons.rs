@@ -3,7 +3,7 @@ use std::{path::Path, fs::{File, self, DirEntry}, io::{Write, BufReader, BufRead
 use log::{warn, info, error, debug};
 use reqwest::StatusCode;
 
-use crate::{OUTPUT_DIR, organizer::{self, database::{create_table, insert_hashes}}, FILE_SIZES, TMP_DIR, MAX_FILE_COMBINES};
+use crate::{OUTPUT_DIR, organizer::{self, database::{create_table, insert_hashes}}, FILE_SIZES, TMP_DIR, MAX_FILE_COMBINES, DATABASE};
 
 /// downloads a file from file_url and save it to output_name. it expects the path to the output name to already exist
 pub fn download_file(output_name: &Path, file_url: &str, max_retries: usize) -> std::io::Result<()>{
@@ -110,4 +110,11 @@ pub fn insert_files() -> std::io::Result<()> {
     }
     info!("Building database took {}s", std::time::Instant::now().duration_since(start_time).as_secs());
     Ok(())
+}
+
+pub fn cleanup() -> std::io::Result<()> {
+    info!("Deleting temp folder...");
+    fs::remove_dir_all(TMP_DIR)?;
+    info!("Deleting database...");
+    fs::remove_file(DATABASE)
 }
