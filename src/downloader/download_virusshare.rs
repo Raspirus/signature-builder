@@ -2,8 +2,9 @@ use std::{path::Path, fs};
 
 use log::{warn, trace, info, error};
 use reqwest::StatusCode;
+use threadpool_rs::threadpool::pool::ThreadPool;
 
-use crate::{threads::threadpool::ThreadPool, MAX_THREADS, MAX_RETRIES, TMP_DIR};
+use crate::{TMP_DIR, MAX_THREADS, MAX_RETRIES};
 
 use super::download_commons::download_file;
 

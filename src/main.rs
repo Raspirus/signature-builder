@@ -2,7 +2,6 @@ use log::info;
 
 mod downloader;
 mod organizer;
-mod threads;
 
 static TMP_DIR: &str = "tmp";
 static MAX_THREADS: usize = 20;
