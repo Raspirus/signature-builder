@@ -24,7 +24,7 @@ static OUTPUT_DIR: &str = "./hashes";
 
 fn main() -> std::io::Result<()> {
     pretty_env_logger::formatted_timed_builder()
-        .filter_level(log::LevelFilter::Debug)
+        .filter_level(log::LevelFilter::Info)
         .parse_env("SB_LOG")
         .init();
     // prepare argument parser
@@ -135,7 +135,7 @@ fn main() -> std::io::Result<()> {
 
     if let Some(_) = parser.get_parsed_argument_long("clean") {
         info!("Cleaning database and tmpdir...");
-        cleanup(tmp_dir.clone(), database.clone())?;
+        cleanup(tmp_dir.clone(), database.clone());
     }
 
     let parsed_arguments = parser.get_parsed_arguments();

@@ -233,9 +233,9 @@ pub fn insert_files(
     Ok(())
 }
 
-pub fn cleanup(tmp_dir: String, database: String) -> std::io::Result<()> {
+pub fn cleanup(tmp_dir: String, database: String) {
     info!("Deleting temp folder...");
-    fs::remove_dir_all(&tmp_dir)?;
+    fs::remove_dir_all(&tmp_dir).unwrap_or(warn!("Temporary directory does not exist; Skipping..."));
     info!("Deleting database...");
-    fs::remove_file(&database)
+    fs::remove_file(&database).unwrap_or(warn!("Database file does not exist; Skipping..."));
 }
