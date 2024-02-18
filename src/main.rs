@@ -80,7 +80,7 @@ fn main() -> std::io::Result<()> {
     debug!("Set database to {database}");
 
     let max_threads = parser
-        .get_parsed_argument_long("tempdir")
+        .get_parsed_argument_long("max-threads")
         .and_then(|parsed_argument| {
             parsed_argument
                 .value
