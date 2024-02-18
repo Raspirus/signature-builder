@@ -57,14 +57,14 @@ fn main() -> std::io::Result<()> {
     });
 
     // if --help was passed output help prompt and exit
-    if let Some(_) = parser.get_parsed_argument_long("help") {
+    parser.get_parsed_argument_long("help").is_some().then(|| {
         println!("Usage: SB_LOG=[INFO|DEBUG|TRACE] signature-builder [Options...]");
         parser
             .get_arguments()
             .into_iter()
             .for_each(|arg| println!("\t{arg}"));
         exit(0)
-    }
+    });
 
     let tmp_dir = parser
         .get_parsed_argument_long("tempdir")
@@ -133,10 +133,10 @@ fn main() -> std::io::Result<()> {
 
     let start_time = std::time::Instant::now();
 
-    if let Some(_) = parser.get_parsed_argument_long("clean") {
+    parser.get_parsed_argument_long("clean").is_some().then(|| {
         info!("Cleaning database and tmpdir...");
         cleanup(tmp_dir.clone(), database.clone());
-    }
+    });
 
     let parsed_arguments = parser.get_parsed_arguments();
     for parsed_argument in parsed_arguments {

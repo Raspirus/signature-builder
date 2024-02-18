@@ -34,7 +34,7 @@ pub fn download_all(
     for file_id in 0..=filecount {
         let dir = output_dir.clone();
         pool.execute(move || {
-            let download_path = dir.join(&format!("vs_{:0>5}.md5", file_id));
+            let download_path = dir.join(format!("vs_{:0>5}.md5", file_id));
             let file_url = format!("{URL}{:0>5}.md5", file_id);
             match download_file(&download_path, &file_url, max_retries) {
                 Ok(_) => info!("Downloaded {}", download_path.display()),

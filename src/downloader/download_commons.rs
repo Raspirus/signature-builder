@@ -30,7 +30,7 @@ pub fn download_file(
 
         match response.status() {
             StatusCode::OK => match response.text() {
-                Ok(data) => return Ok(file.write_all(data.as_bytes())?),
+                Ok(data) => file.write_all(data.as_bytes())?,
                 Err(err) => warn!("Failed to download {file_url} on try {current_retry}: {err}"),
             },
             _ => warn!(
@@ -235,7 +235,7 @@ pub fn insert_files(
 
 pub fn cleanup(tmp_dir: String, database: String) {
     info!("Deleting temp folder...");
-    fs::remove_dir_all(&tmp_dir).unwrap_or(warn!("Temporary directory does not exist; Skipping..."));
+    fs::remove_dir_all(tmp_dir).unwrap_or(warn!("Temporary directory does not exist; Skipping..."));
     info!("Deleting database...");
-    fs::remove_file(&database).unwrap_or(warn!("Database file does not exist; Skipping..."));
+    fs::remove_file(database).unwrap_or(warn!("Database file does not exist; Skipping..."));
 }
