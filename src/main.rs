@@ -1,4 +1,12 @@
-use log::info;
+use std::{path::Path, process::exit, sync::Arc};
+
+use cali::parser::Parser;
+use log::{debug, error, info};
+
+use crate::downloader::{
+    download_commons::{cleanup, insert_file, insert_files, write_files},
+    virusshare::download_all,
+};
 
 mod downloader;
 mod organizer;
@@ -11,15 +19,170 @@ static DATABASE: &str = "hashes_db";
 static TABLE_NAME: &str = "hashes";
 static MAX_FILE_COMBINES: usize = 8;
 
-static FILE_SIZES: usize = 1_000_000;
-static OUTPUT_DIR: &str = "../signatures/hashes";
+static FILE_SIZE: usize = 1_000_000;
+static OUTPUT_DIR: &str = "./hashes";
 
 fn main() -> std::io::Result<()> {
+    pretty_env_logger::formatted_timed_builder()
+        .filter_level(log::LevelFilter::Debug)
+        .parse_env("SB_LOG")
+        .init();
+    // prepare argument parser
+    #[rustfmt::skip]
+    let mut parser = Parser::new()
+        // general options
+        .add_arg("h", "help", "Prints this help prompt", false, false)
+        // actions
+        .add_arg("f", "fetch", "Fetches the latest files", false, false)
+        .add_arg("i", "insert", "Inserts files into db", false, false)
+        .add_arg("e", "export", "Exports all hashes from db", false, false)
+        .add_arg("if", "insert-file", "Inserts specified file", true, false)
+        .add_arg("u", "update", "Fetches and imports", false, false)
+        .add_arg("c", "clean", "Clears the temp dir and the database", false, false)
+        // processing arguments
+        .add_arg("t", "tempdir", "Sets the temporary directory; Defaults to ./tmp", true, true)
+        .add_arg("d", "database", "Sets the database name; Defaults to hashes_db", true, true)
+        .add_arg("mt", "max-threads", "Sets the max download threads; Defaults to 20", true, true)
+        .add_arg("mr", "max-retries", "Sets the max download retries; Defaults to 5", true, true)
+        .add_arg("mc", "max-combines", "Sets how many files can be combined for inserting; Defaults to 8", true, true)
+        .add_arg("tb", "table", "Sets the tablename; Defaults to hashes", true, true)
+        // output options
+        .add_arg("o", "output", "Sets the output folder; Defaults to ./hashes", true, true)
+        .add_arg("l", "length", "The number of lines in output files; Defaults to 1_000_000", true, true);
+
+    // parse arguments
+    let _ = parser.parse().is_err_and(|err| {
+        error!("Failed to parse arguments: {err}");
+        exit(-1)
+    });
+
+    // if --help was passed output help prompt and exit
+    if let Some(_) = parser.get_parsed_argument_long("help") {
+        println!("Usage: SB_LOG=[INFO|DEBUG|TRACE] signature-builder [Options...]");
+        parser
+            .get_arguments()
+            .into_iter()
+            .for_each(|arg| println!("\t{arg}"));
+        exit(0)
+    }
+
+    let tmp_dir = parser
+        .get_parsed_argument_long("tempdir")
+        .and_then(|parsed_argument| parsed_argument.value)
+        .unwrap_or(TMP_DIR.to_owned());
+    debug!("Set tmp_dir to {tmp_dir}");
+    let tmp_dir_arc = Arc::new(Path::new(&tmp_dir).to_owned());
+
+    let database = parser
+        .get_parsed_argument_long("database")
+        .and_then(|parsed_argument| parsed_argument.value)
+        .unwrap_or(DATABASE.to_string());
+    debug!("Set database to {database}");
+
+    let max_threads = parser
+        .get_parsed_argument_long("tempdir")
+        .and_then(|parsed_argument| {
+            parsed_argument
+                .value
+                .map(|value| value.parse::<usize>().unwrap_or(MAX_THREADS))
+        })
+        .unwrap_or(MAX_THREADS);
+    debug!("Set max_threads to {max_threads}");
+
+    let max_retries = parser
+        .get_parsed_argument_long("max-retries")
+        .and_then(|parsed_argument| {
+            parsed_argument
+                .value
+                .map(|value| value.parse::<usize>().unwrap_or(MAX_RETRIES))
+        })
+        .unwrap_or(MAX_RETRIES);
+    debug!("Set max_retries to {max_retries}");
+
+    let max_combines = parser
+        .get_parsed_argument_long("max-combines")
+        .and_then(|parsed_argument| {
+            parsed_argument
+                .value
+                .map(|value| value.parse::<usize>().unwrap_or(MAX_FILE_COMBINES))
+        })
+        .unwrap_or(MAX_FILE_COMBINES);
+    debug!("Set max_combines to {max_combines}");
+
+    let table_name = parser
+        .get_parsed_argument_long("table")
+        .and_then(|parsed_argument| parsed_argument.value)
+        .unwrap_or(TABLE_NAME.to_owned());
+    debug!("Set table_name to {table_name}");
+
+    let output_dir = parser
+        .get_parsed_argument_long("output")
+        .and_then(|parsed_argument| parsed_argument.value)
+        .unwrap_or(OUTPUT_DIR.to_owned());
+    debug!("Set output_dir to {output_dir}");
+
+    let file_size = parser
+        .get_parsed_argument_long("length")
+        .and_then(|parsed_argument| {
+            parsed_argument
+                .value
+                .map(|value| value.parse::<usize>().unwrap_or(FILE_SIZE))
+        })
+        .unwrap_or(FILE_SIZE);
+    debug!("Set file_size to {file_size}");
+
     let start_time = std::time::Instant::now();
-    pretty_env_logger::init();
-    downloader::download_virusshare::download_all()?;
-    downloader::download_commons::insert_files()?;
-    downloader::download_commons::write_files()?;
-    info!("Total time was {}s", std::time::Instant::now().duration_since(start_time).as_secs());
+
+    if let Some(_) = parser.get_parsed_argument_long("clean") {
+        info!("Cleaning database and tmpdir...");
+        cleanup(tmp_dir.clone(), database.clone())?;
+    }
+
+    let parsed_arguments = parser.get_parsed_arguments();
+    for parsed_argument in parsed_arguments {
+        match parsed_argument {
+            _ if parsed_argument.long_matches("fetch") => {
+                download_all(tmp_dir_arc.clone(), max_threads, max_retries)?
+            }
+            _ if parsed_argument.long_matches("insert") => insert_files(
+                tmp_dir.clone(),
+                max_combines,
+                database.clone(),
+                table_name.clone(),
+            )?,
+            _ if parsed_argument.long_matches("insert-file") => {
+                let file_path = parser
+                    .get_parsed_argument_long("insert-file")
+                    .and_then(|parsed_argument| parsed_argument.value)
+                    .unwrap_or_default();
+                insert_file(file_path, database.clone(), table_name.clone())?;
+            },
+            _ if parsed_argument.long_matches("update") => {
+                download_all(tmp_dir_arc.clone(), max_threads, max_retries)?;
+                insert_files(
+                    tmp_dir.clone(),
+                    max_combines,
+                    database.clone(),
+                    table_name.clone(),
+                )?;
+            }
+            _ if parsed_argument.long_matches("export") => {
+                write_files(
+                    output_dir.clone(),
+                    file_size,
+                    database.clone(),
+                    table_name.clone(),
+                )?;
+            }
+            _ => {}
+        }
+    }
+
+    info!(
+        "Total time was {}s",
+        std::time::Instant::now()
+            .duration_since(start_time)
+            .as_secs_f32()
+    );
     Ok(())
 }

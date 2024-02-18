@@ -6,8 +6,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+cali = { git = "https://github.com/GamingGuy003/cali" }
 log = "0.4.20"
 pretty_env_logger = "0.5.0"
-reqwest = { version = "0.11.23", features = ["blocking"] }
-rusqlite = { version = "0.30.0", features = ["bundled"] }
-threadpool_rs = { git = "https://github.com/GamingGuy003/threadpool_rs.git", branch = "main", features = ["log"] }
+reqwest = { version = "0.11.24", features = ["blocking"] }
+rusqlite = { version = "0.31.0", features = ["bundled"] }
+threadpool_rs = { git = "https://github.com/GamingGuy003/threadpool_rs.git", features = ["log"] }

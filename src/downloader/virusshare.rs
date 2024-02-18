@@ -1,52 +1,62 @@
-use std::{path::Path, fs};
+use std::{fs, path::PathBuf, sync::Arc};
 
-use log::{warn, trace, info, error};
+use super::download_commons::download_file;
+use log::{error, info, trace, warn};
 use reqwest::StatusCode;
 use threadpool_rs::threadpool::pool::ThreadPool;
 
-use crate::{TMP_DIR, MAX_THREADS, MAX_RETRIES};
-
-use super::download_commons::download_file;
-
 static URL: &str = "https://virusshare.com/hashfiles/VirusShare_";
 
-pub fn download_all() -> std::io::Result<()> {
-    let output_dir = Path::new(TMP_DIR);
+pub fn download_all(
+    output_dir: Arc<PathBuf>,
+    max_threads: usize,
+    max_retries: usize,
+) -> std::io::Result<()> {
     if !output_dir.exists() {
-        fs::create_dir_all(output_dir)?;
+        fs::create_dir_all(Arc::clone(&output_dir).as_ref())?;
     }
-    
+
     let start_time = std::time::Instant::now();
     info!("Indexing webfiles...");
-    let filecount = match get_file_count() {
+    let filecount = match get_file_count(max_retries) {
         Ok(filecount) => filecount,
-        Err(err) => return Err(std::io::Error::new(std::io::ErrorKind::Other, format!("Could not get maximum filecount: {err}")))
+        Err(err) => {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                format!("Could not get maximum filecount: {err}"),
+            ))
+        }
     };
     info!("Found {filecount} file(s)");
 
-    let pool = ThreadPool::new(MAX_THREADS)?;
-    
+    let pool = ThreadPool::new(max_threads)?;
+
     for file_id in 0..=filecount {
+        let dir = output_dir.clone();
         pool.execute(move || {
-            let download_path = output_dir.join(&format!("vs_{:0>5}.md5", file_id));
+            let download_path = dir.join(&format!("vs_{:0>5}.md5", file_id));
             let file_url = format!("{URL}{:0>5}.md5", file_id);
-            match download_file(&download_path, &file_url, MAX_RETRIES) {
+            match download_file(&download_path, &file_url, max_retries) {
                 Ok(_) => info!("Downloaded {}", download_path.display()),
                 Err(err) => error!("Failed to download {file_url}: {err}"),
             };
         });
     }
     drop(pool);
-    info!("Downloaded files in {}s", std::time::Instant::now().duration_since(start_time).as_secs());
+    info!(
+        "Downloaded files in {}s",
+        std::time::Instant::now()
+            .duration_since(start_time)
+            .as_secs()
+    );
     Ok(())
 }
 
-
-fn get_file_count() -> Result<usize, reqwest::Error> {
+fn get_file_count(base_max_retry: usize) -> Result<usize, reqwest::Error> {
     let client = reqwest::blocking::Client::new();
     let mut max = 0;
-    let mut max_retry = 5;
-    
+    let mut max_retry = base_max_retry;
+
     // go up in 10 increments
     loop {
         let file_url = format!("{URL}{:0>5}.md5", max);
@@ -56,7 +66,10 @@ fn get_file_count() -> Result<usize, reqwest::Error> {
             StatusCode::OK => max += 10,
             StatusCode::NOT_FOUND => break,
             _ => {
-                warn!("Received invalid status {}, trying again...", response.status());
+                warn!(
+                    "Received invalid status {}, trying again...",
+                    response.status()
+                );
                 max_retry -= 1;
                 if max_retry == 0 {
                     warn!("Failed 5 times, aborting; Check your network?")
@@ -66,7 +79,7 @@ fn get_file_count() -> Result<usize, reqwest::Error> {
     }
 
     max -= 10;
-    max_retry = 5;
+    max_retry = base_max_retry;
 
     // go up in 1 increments from last 10th still present
     loop {
@@ -77,7 +90,10 @@ fn get_file_count() -> Result<usize, reqwest::Error> {
             StatusCode::OK => max += 1,
             StatusCode::NOT_FOUND => break,
             _ => {
-                warn!("Received invalid status {}, trying again...", response.status());
+                warn!(
+                    "Received invalid status {}, trying again...",
+                    response.status()
+                );
                 max_retry -= 1;
                 if max_retry == 0 {
                     warn!("Failed 5 times, aborting; Check your network?")
