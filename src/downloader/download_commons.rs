@@ -137,7 +137,7 @@ pub fn insert_file(file_path: String, database: String, table_name: String) -> s
         file_path,
         lines.len()
     );
-    
+
     insert_hashes(&mut database, table_name.clone(), &lines)
         .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))?;
 

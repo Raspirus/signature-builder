@@ -156,7 +156,7 @@ fn main() -> std::io::Result<()> {
                     .and_then(|parsed_argument| parsed_argument.value)
                     .unwrap_or_default();
                 insert_file(file_path, database.clone(), table_name.clone())?;
-            },
+            }
             _ if parsed_argument.long_matches("update") => {
                 download_all(tmp_dir_arc.clone(), max_threads, max_retries)?;
                 insert_files(
