@@ -155,12 +155,12 @@ fn main() -> std::io::Result<()> {
     // cleanup
     if parser.get_parsed_argument_long("clean-database").is_some() {
         info!("Cleaning database...");
-        fs::remove_file(database.clone())?;
+        let _ = fs::remove_file(database.clone());
     }
 
     if parser.get_parsed_argument_long("clean-temp").is_some() {
         info!("Cleaning temporary folder...");
-        fs::remove_dir_all(tmp_dir.clone())?;
+        let _ = fs::remove_dir_all(tmp_dir.clone());
     }
 
     if parser.get_parsed_argument_long("clean-database").is_some() {
