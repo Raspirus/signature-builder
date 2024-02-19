@@ -46,7 +46,10 @@ pub fn download_file(
         // if ok we write to file, otherwise we retry
         match response.status() {
             StatusCode::OK => match response.text() {
-                Ok(data) => file.write_all(data.as_bytes())?,
+                Ok(data) => {
+                    file.write_all(data.as_bytes())?;
+                    return Ok(())
+                },
                 Err(err) => warn!("Failed to download {file_url} on try {current_retry}: {err}"),
             },
             _ => warn!(
