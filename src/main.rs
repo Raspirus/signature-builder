@@ -4,13 +4,10 @@ use cali::parser::Parser;
 use log::{debug, error, info};
 
 use crate::{
-    downloader::{
-        download_commons::{cleanup, insert_file, insert_files, write_files},
-        virusshare::download_all,
-    },
+    downloader::virusshare::download_all,
     organizer::{
         database::{create_pool, get_hash_count},
-        logic::patch,
+        files::{cleanup, insert_file, insert_files, patch, write_files},
     },
 };
 
@@ -208,12 +205,14 @@ fn main() -> std::io::Result<()> {
                 patch(database.clone(), table_name.clone(), file_path)?;
             }
             _ if parsed_argument.long_matches("numerate") => {
-                let database_connection = create_pool(database.clone(), table_name.clone()).map_err(|err| {
-                    std::io::Error::new(std::io::ErrorKind::Other, err.to_string())
-                })?;
-                let count = get_hash_count(&database_connection, table_name.clone()).map_err(|err| {
-                    std::io::Error::new(std::io::ErrorKind::Other, err.to_string())
-                })?;
+                let database_connection = create_pool(database.clone(), table_name.clone())
+                    .map_err(|err| {
+                        std::io::Error::new(std::io::ErrorKind::Other, err.to_string())
+                    })?;
+                let count =
+                    get_hash_count(&database_connection, table_name.clone()).map_err(|err| {
+                        std::io::Error::new(std::io::ErrorKind::Other, err.to_string())
+                    })?;
                 database_connection.close().map_err(|err| {
                     std::io::Error::new(std::io::ErrorKind::Other, err.1.to_string())
                 })?;

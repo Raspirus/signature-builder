@@ -1,4 +1,4 @@
-use std::{fs, path::PathBuf, sync::Arc};
+use std::{path::PathBuf, sync::Arc};
 
 use super::download_commons::download_file;
 use log::{error, info, trace, warn};
@@ -7,16 +7,14 @@ use threadpool_rs::threadpool::pool::ThreadPool;
 
 static URL: &str = "https://virusshare.com/hashfiles/VirusShare_";
 
+/// downlaods all files from provider into output_dir (tmp workfolder)
 pub fn download_all(
     output_dir: Arc<PathBuf>,
     max_threads: usize,
     max_retries: usize,
 ) -> std::io::Result<()> {
-    if !output_dir.exists() {
-        fs::create_dir_all(Arc::clone(&output_dir).as_ref())?;
-    }
-
     let start_time = std::time::Instant::now();
+
     info!("Indexing webfiles...");
     let filecount = match get_file_count(max_retries) {
         Ok(filecount) => filecount,
@@ -29,8 +27,8 @@ pub fn download_all(
     };
     info!("Found {filecount} file(s)");
 
+    // multithreaded download
     let pool = ThreadPool::new(max_threads)?;
-
     for file_id in 0..=filecount {
         let dir = output_dir.clone();
         pool.execute(move || {
@@ -42,6 +40,7 @@ pub fn download_all(
             };
         });
     }
+    // drop to wait for pool to finish
     drop(pool);
     info!(
         "Downloaded files in {}s",
@@ -52,6 +51,7 @@ pub fn download_all(
     Ok(())
 }
 
+/// calculates the total number of files present on provider
 fn get_file_count(base_max_retry: usize) -> Result<usize, reqwest::Error> {
     let client = reqwest::blocking::Client::new();
     let mut max = 0;

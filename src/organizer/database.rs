@@ -1,6 +1,17 @@
 use log::trace;
 use rusqlite::params;
 
+/// creates the database connection pool
+pub fn create_pool(
+    database: String,
+    table_name: String,
+) -> Result<rusqlite::Connection, rusqlite::Error> {
+    let connection = rusqlite::Connection::open(database)?;
+    create_table(&connection, table_name.clone())?;
+    Ok(connection)
+}
+
+/// creates table in database if not already existent
 pub fn create_table(
     connection: &rusqlite::Connection,
     table_name: String,
@@ -15,11 +26,13 @@ pub fn create_table(
     Ok(())
 }
 
+/// inserts a vectore of hashes into database
 pub fn insert_hashes(
     connection: &mut rusqlite::Connection,
     table_name: String,
     hashes: &Vec<String>,
 ) -> Result<(), rusqlite::Error> {
+    // we use transactions to speed up large inserts
     let transaction = connection.transaction()?;
     for hash in hashes {
         trace!("Inserting {hash}");
@@ -32,11 +45,13 @@ pub fn insert_hashes(
     Ok(())
 }
 
+/// removes a vector of hashes from database
 pub fn remove_hashes(
     connection: &mut rusqlite::Connection,
     table_name: String,
     hashes: &Vec<String>,
 ) -> Result<(), rusqlite::Error> {
+    // transactions for faster large removes
     let transaction = connection.transaction()?;
     for hash in hashes {
         trace!("Removing {hash}");
@@ -49,6 +64,7 @@ pub fn remove_hashes(
     Ok(())
 }
 
+/// gets a range of hashes from database
 pub fn get_hashes(
     connection: &rusqlite::Connection,
     table_name: String,
@@ -66,19 +82,11 @@ pub fn get_hashes(
     Ok(out)
 }
 
+/// gets the count of current hashes in database
 pub fn get_hash_count(
     connection: &rusqlite::Connection,
     table_name: String,
 ) -> Result<u64, rusqlite::Error> {
     let mut sql = connection.prepare(&format!("SELECT COUNT(*) FROM {}", table_name))?;
     sql.query_row([], |row| row.get(0))
-}
-
-pub fn create_pool(
-    database: String,
-    table_name: String,
-) -> Result<rusqlite::Connection, rusqlite::Error> {
-    let connection = rusqlite::Connection::open(database)?;
-    create_table(&connection, table_name.clone())?;
-    Ok(connection)
 }
