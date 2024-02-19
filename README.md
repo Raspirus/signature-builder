@@ -1,4 +1,12 @@
+### Description
+
+This tool fetches the latest hashes from providers and builds its own files for use with Raspirus (https://github.com/Raspirus/raspirus.git).
+
 ### Functionality
+
+All the arguments can be combined with eachother. The program goes through them one by one, so the user can declare the order in which operations are executed
+
+<p>&nbsp;</p>
 
 `-h`|`--help`
 
