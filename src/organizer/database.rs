@@ -32,6 +32,23 @@ pub fn insert_hashes(
     Ok(())
 }
 
+pub fn remove_hashes(
+    connection: &mut rusqlite::Connection,
+    table_name: String,
+    hashes: &Vec<String>,
+) -> Result<(), rusqlite::Error> {
+    let transaction = connection.transaction()?;
+    for hash in hashes {
+        trace!("Removing {hash}");
+        transaction.execute(
+            &format!("DELETE FROM {} WHERE hash = (?1)", table_name),
+            params![hash],
+        )?;
+    }
+    transaction.commit()?;
+    Ok(())
+}
+
 pub fn get_hashes(
     connection: &rusqlite::Connection,
     table_name: String,
@@ -49,6 +66,11 @@ pub fn get_hashes(
     Ok(out)
 }
 
-pub fn create_pool(database: String) -> Result<rusqlite::Connection, rusqlite::Error> {
-    rusqlite::Connection::open(database)
+pub fn create_pool(
+    database: String,
+    table_name: String,
+) -> Result<rusqlite::Connection, rusqlite::Error> {
+    let connection = rusqlite::Connection::open(database)?;
+    create_table(&connection, table_name.clone())?;
+    Ok(connection)
 }

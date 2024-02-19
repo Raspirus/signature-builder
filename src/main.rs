@@ -3,9 +3,12 @@ use std::{path::Path, process::exit, sync::Arc};
 use cali::parser::Parser;
 use log::{debug, error, info};
 
-use crate::downloader::{
-    download_commons::{cleanup, insert_file, insert_files, write_files},
-    virusshare::download_all,
+use crate::{
+    downloader::{
+        download_commons::{cleanup, insert_file, insert_files, write_files},
+        virusshare::download_all,
+    },
+    organizer::logic::patch,
 };
 
 mod downloader;
@@ -39,6 +42,7 @@ fn main() -> std::io::Result<()> {
         .add_arg("if", "insert-file", "Inserts specified file", true, false)
         .add_arg("u", "update", "Fetches and imports", false, false)
         .add_arg("c", "clean", "Clears the temp dir and the database", false, false)
+        .add_arg("p", "patch", "Apply a patch file", true, false)
         // processing arguments
         .add_arg("t", "tempdir", "Sets the temporary directory; Defaults to ./tmp", true, true)
         .add_arg("d", "database", "Sets the database name; Defaults to hashes_db", true, true)
@@ -52,7 +56,7 @@ fn main() -> std::io::Result<()> {
 
     // parse arguments
     let _ = parser.parse().is_err_and(|err| {
-        error!("Failed to parse arguments: {err}");
+        error!("{err}");
         exit(-1)
     });
 
@@ -82,9 +86,12 @@ fn main() -> std::io::Result<()> {
     let max_threads = parser
         .get_parsed_argument_long("max-threads")
         .and_then(|parsed_argument| {
-            parsed_argument
-                .value
-                .map(|value| value.parse::<usize>().unwrap_or(MAX_THREADS))
+            parsed_argument.value.map(|value| {
+                value.parse::<usize>().unwrap_or_else(|err| {
+                    error!("Failed to parse {value} for max-threads to usize: {err}");
+                    exit(-1)
+                })
+            })
         })
         .unwrap_or(MAX_THREADS);
     debug!("Set max_threads to {max_threads}");
@@ -92,9 +99,12 @@ fn main() -> std::io::Result<()> {
     let max_retries = parser
         .get_parsed_argument_long("max-retries")
         .and_then(|parsed_argument| {
-            parsed_argument
-                .value
-                .map(|value| value.parse::<usize>().unwrap_or(MAX_RETRIES))
+            parsed_argument.value.map(|value| {
+                value.parse::<usize>().unwrap_or_else(|err| {
+                    error!("Failed to parse {value} for max-retries to usize: {err}");
+                    exit(-1)
+                })
+            })
         })
         .unwrap_or(MAX_RETRIES);
     debug!("Set max_retries to {max_retries}");
@@ -102,9 +112,12 @@ fn main() -> std::io::Result<()> {
     let max_combines = parser
         .get_parsed_argument_long("max-combines")
         .and_then(|parsed_argument| {
-            parsed_argument
-                .value
-                .map(|value| value.parse::<usize>().unwrap_or(MAX_FILE_COMBINES))
+            parsed_argument.value.map(|value| {
+                value.parse::<usize>().unwrap_or_else(|err| {
+                    error!("Failed to parse {value} for max-combines to usize: {err}");
+                    exit(-1)
+                })
+            })
         })
         .unwrap_or(MAX_FILE_COMBINES);
     debug!("Set max_combines to {max_combines}");
@@ -124,9 +137,12 @@ fn main() -> std::io::Result<()> {
     let file_size = parser
         .get_parsed_argument_long("length")
         .and_then(|parsed_argument| {
-            parsed_argument
-                .value
-                .map(|value| value.parse::<usize>().unwrap_or(FILE_SIZE))
+            parsed_argument.value.map(|value| {
+                value.parse::<usize>().unwrap_or_else(|err| {
+                    error!("Failed to parse {value} for length to usize: {err}");
+                    exit(-1)
+                })
+            })
         })
         .unwrap_or(FILE_SIZE);
     debug!("Set file_size to {file_size}");
@@ -154,7 +170,10 @@ fn main() -> std::io::Result<()> {
                 let file_path = parser
                     .get_parsed_argument_long("insert-file")
                     .and_then(|parsed_argument| parsed_argument.value)
-                    .unwrap_or_default();
+                    .unwrap_or_else(|| {
+                        error!("Could not get path for insert-file!");
+                        exit(-1)
+                    });
                 insert_file(file_path, database.clone(), table_name.clone())?;
             }
             _ if parsed_argument.long_matches("update") => {
@@ -173,6 +192,16 @@ fn main() -> std::io::Result<()> {
                     database.clone(),
                     table_name.clone(),
                 )?;
+            }
+            _ if parsed_argument.long_matches("patch") => {
+                let file_path = parser
+                    .get_parsed_argument_long("patch")
+                    .and_then(|parsed_argument| parsed_argument.value)
+                    .unwrap_or_else(|| {
+                        error!("Could not get path for path!");
+                        exit(-1)
+                    });
+                patch(database.clone(), table_name.clone(), file_path)?;
             }
             _ => {}
         }

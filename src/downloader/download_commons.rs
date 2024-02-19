@@ -7,7 +7,7 @@ use std::{
 use log::{debug, error, info, warn};
 use reqwest::StatusCode;
 
-use crate::organizer::database::{create_pool, create_table, get_hashes, insert_hashes};
+use crate::organizer::database::{create_pool, get_hashes, insert_hashes};
 
 /// downloads a file from file_url and save it to output_name. it expects the path to the output name to already exist
 pub fn download_file(
@@ -76,7 +76,7 @@ pub fn write_files(
         max += 1
     }
 
-    let connection = create_pool(database).expect("Failed to get connection");
+    let connection = create_pool(database, table_name.clone()).expect("Failed to get connection");
     let mut current_frame = 0;
     let mut current_file = max;
     loop {
@@ -110,9 +110,7 @@ pub fn write_files(
 pub fn insert_file(file_path: String, database: String, table_name: String) -> std::io::Result<()> {
     let start_time = std::time::Instant::now();
 
-    let mut database = create_pool(database)
-        .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))?;
-    create_table(&database, table_name.clone())
+    let mut database = create_pool(database, table_name.clone())
         .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))?;
 
     let mut lines: Vec<String> = Vec::new();
@@ -162,9 +160,7 @@ pub fn insert_files(
         .collect();
     let output_dir = Path::new(&tmp_dir);
 
-    let mut database = create_pool(database)
-        .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))?;
-    create_table(&database, table_name.clone())
+    let mut database = create_pool(database, table_name.clone())
         .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))?;
 
     for chunk_id in 0..=(entries.len() / max_file_combines) {
@@ -235,7 +231,8 @@ pub fn insert_files(
 
 pub fn cleanup(tmp_dir: String, database: String) {
     info!("Deleting temp folder...");
-    fs::remove_dir_all(tmp_dir).unwrap_or(debug!("Temporary directory does not exist; Skipping..."));
+    fs::remove_dir_all(tmp_dir)
+        .unwrap_or(debug!("Temporary directory does not exist; Skipping..."));
     info!("Deleting database...");
     fs::remove_file(database).unwrap_or(debug!("Database file does not exist; Skipping..."));
 }
