@@ -6,7 +6,7 @@ use std::{
 
 use log::{debug, error, info, warn};
 
-use crate::organizer::database::{create_pool, get_hashes, insert_hashes, remove_hashes};
+use crate::organizer::database::{create_pool, get_hash_count, get_hashes, insert_hashes, remove_hashes};
 
 /// inserts the content of provided file into database
 pub fn insert_file(file_path: String, database: String, table_name: String) -> std::io::Result<()> {
@@ -209,6 +209,11 @@ pub fn write_files(
     // setup connection
     let connection = create_pool(database, table_name.clone())
         .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))?;
+
+    let count = get_hash_count(&connection, table_name.clone())
+        .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))?;
+    info!("Exporting {count} hashes...");
+    
     let mut current_frame = 0;
     let mut current_file = 0;
     loop {

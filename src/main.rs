@@ -216,7 +216,7 @@ fn main() -> std::io::Result<()> {
                 database_connection.close().map_err(|err| {
                     std::io::Error::new(std::io::ErrorKind::Other, err.1.to_string())
                 })?;
-                println!("There are currently {count} hashes in DB");
+                info!("There are currently {count} hashes in DB");
             }
             _ => {}
         }
