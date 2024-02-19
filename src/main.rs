@@ -160,7 +160,7 @@ fn main() -> std::io::Result<()> {
 
     if parser.get_parsed_argument_long("clean-temp").is_some() {
         info!("Cleaning temporary folder...");
-        fs::remove_file(tmp_dir.clone())?;
+        fs::remove_dir_all(tmp_dir.clone())?;
     }
 
     if parser.get_parsed_argument_long("clean-database").is_some() {
