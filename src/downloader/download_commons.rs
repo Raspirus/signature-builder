@@ -15,13 +15,14 @@ pub fn download_file(
 ) -> std::io::Result<()> {
     // checks if output folder exists
     match output_name.parent() {
-        Some(parent_dir) => (!parent_dir.exists()).then(|| Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            "Parent directory does not exist",
-        ))).unwrap_or(Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            "Parent directory does not exist",
-        ))),
+        Some(parent_dir) => if !parent_dir.exists() {
+            Err(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "Parent directory does not exist",
+            ))
+        } else {
+            Ok(())
+        }
         None => Err(std::io::Error::new(
             std::io::ErrorKind::Other,
             "No parent directory",
