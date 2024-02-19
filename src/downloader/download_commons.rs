@@ -7,23 +7,24 @@ use std::{
 use log::warn;
 use reqwest::StatusCode;
 
-/// downloads a file from file_url and save it to output_name. output folder will be created if not existant
+/// downloads a file from file_url and save it to output_name. output folder needs to exist or function will throw error
 pub fn download_file(
     output_name: &Path,
     file_url: &str,
     max_retries: usize,
 ) -> std::io::Result<()> {
-    // create output folder if not present
+    // checks if output folder exists
     match output_name.parent() {
-        Some(parent_dir) => (!parent_dir.exists())
-            .then(|| fs::create_dir_all(parent_dir))
-            .unwrap_or(Err(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "Failed to create parent directory path",
-            ))),
+        Some(parent_dir) => (!parent_dir.exists()).then(|| Err(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "Parent directory does not exist",
+        ))).unwrap_or(Err(std::io::Error::new(
+            std::io::ErrorKind::Other,
+            "Parent directory does not exist",
+        ))),
         None => Err(std::io::Error::new(
             std::io::ErrorKind::Other,
-            "Failed to create parent directory path",
+            "No parent directory",
         )),
     }?;
     // deletes output file if exist

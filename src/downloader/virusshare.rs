@@ -1,4 +1,4 @@
-use std::{path::PathBuf, sync::Arc};
+use std::{fs, path::PathBuf, sync::Arc};
 
 use super::download_commons::download_file;
 use log::{error, info, trace, warn};
@@ -14,6 +14,8 @@ pub fn download_all(
     max_retries: usize,
 ) -> std::io::Result<()> {
     let start_time = std::time::Instant::now();
+    // creates output folder
+    fs::create_dir_all(output_dir.as_ref())?;
 
     info!("Indexing webfiles...");
     let filecount = match get_file_count(max_retries) {
