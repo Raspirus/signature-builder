@@ -18,8 +18,8 @@ pub fn patch(database: String, table_name: String, file_name: String) -> std::io
     for line in bufreader.lines() {
         let line = line?;
         match line {
-            _ if line.starts_with("+") => add.push(line.replacen("+", "", 1)),
-            _ if line.starts_with("-") => remove.push(line.replacen("-", "", 1)),
+            _ if line.starts_with("+") => add.push(line.replacen("+", "", 1).trim().to_owned()),
+            _ if line.starts_with("-") => remove.push(line.replacen("-", "", 1).trim().to_owned()),
             _ => warn!("Ignoring line {line}"),
         }
     }

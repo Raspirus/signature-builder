@@ -8,7 +8,10 @@ use crate::{
         download_commons::{cleanup, insert_file, insert_files, write_files},
         virusshare::download_all,
     },
-    organizer::logic::patch,
+    organizer::{
+        database::{create_pool, get_hash_count},
+        logic::patch,
+    },
 };
 
 mod downloader;
@@ -43,6 +46,7 @@ fn main() -> std::io::Result<()> {
         .add_arg("u", "update", "Fetches and imports", false, false)
         .add_arg("c", "clean", "Clears the temp dir and the database", false, false)
         .add_arg("p", "patch", "Apply a patch file", true, false)
+        .add_arg("n", "numerate", "Returns the number of hashes currently in DB", false, false)
         // processing arguments
         .add_arg("t", "tempdir", "Sets the temporary directory; Defaults to ./tmp", true, true)
         .add_arg("d", "database", "Sets the database name; Defaults to hashes_db", true, true)
@@ -202,6 +206,18 @@ fn main() -> std::io::Result<()> {
                         exit(-1)
                     });
                 patch(database.clone(), table_name.clone(), file_path)?;
+            }
+            _ if parsed_argument.long_matches("numerate") => {
+                let database_connection = create_pool(database.clone(), table_name.clone()).map_err(|err| {
+                    std::io::Error::new(std::io::ErrorKind::Other, err.to_string())
+                })?;
+                let count = get_hash_count(&database_connection, table_name.clone()).map_err(|err| {
+                    std::io::Error::new(std::io::ErrorKind::Other, err.to_string())
+                })?;
+                database_connection.close().map_err(|err| {
+                    std::io::Error::new(std::io::ErrorKind::Other, err.1.to_string())
+                })?;
+                println!("There are currently {count} hashes in DB");
             }
             _ => {}
         }

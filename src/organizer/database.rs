@@ -66,6 +66,14 @@ pub fn get_hashes(
     Ok(out)
 }
 
+pub fn get_hash_count(
+    connection: &rusqlite::Connection,
+    table_name: String,
+) -> Result<u64, rusqlite::Error> {
+    let mut sql = connection.prepare(&format!("SELECT COUNT(*) FROM {}", table_name))?;
+    sql.query_row([], |row| row.get(0))
+}
+
 pub fn create_pool(
     database: String,
     table_name: String,
