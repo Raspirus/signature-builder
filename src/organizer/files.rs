@@ -6,7 +6,9 @@ use std::{
 
 use log::{debug, error, info, warn};
 
-use crate::organizer::database::{create_pool, get_hash_count, get_hashes, insert_hashes, remove_hashes};
+use crate::organizer::database::{
+    create_pool, get_hash_count, get_hashes, insert_hashes, remove_hashes,
+};
 
 /// inserts the content of provided file into database
 pub fn insert_file(file_path: String, database: String, table_name: String) -> std::io::Result<()> {
@@ -142,15 +144,6 @@ pub fn insert_files(
     Ok(())
 }
 
-/// removes the temporary folder and databse file
-pub fn cleanup(tmp_dir: String, database: String) {
-    info!("Deleting temp folder...");
-    fs::remove_dir_all(tmp_dir)
-        .unwrap_or(debug!("Temporary directory does not exist; Skipping..."));
-    info!("Deleting database...");
-    fs::remove_file(database).unwrap_or(debug!("Database file does not exist; Skipping..."));
-}
-
 /// patches the database with the supplied file
 pub fn patch(database: String, table_name: String, file_name: String) -> std::io::Result<()> {
     let start_time = std::time::Instant::now();
@@ -213,7 +206,7 @@ pub fn write_files(
     let count = get_hash_count(&connection, table_name.clone())
         .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))?;
     info!("Exporting {count} hashes...");
-    
+
     let mut current_frame = 0;
     let mut current_file = 0;
     loop {

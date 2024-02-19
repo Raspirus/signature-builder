@@ -15,13 +15,15 @@ pub fn download_file(
 ) -> std::io::Result<()> {
     // checks if output folder exists
     match output_name.parent() {
-        Some(parent_dir) => if !parent_dir.exists() {
-            Err(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                "Parent directory does not exist",
-            ))
-        } else {
-            Ok(())
+        Some(parent_dir) => {
+            if !parent_dir.exists() {
+                Err(std::io::Error::new(
+                    std::io::ErrorKind::Other,
+                    "Parent directory does not exist",
+                ))
+            } else {
+                Ok(())
+            }
         }
         None => Err(std::io::Error::new(
             std::io::ErrorKind::Other,
@@ -48,8 +50,8 @@ pub fn download_file(
             StatusCode::OK => match response.text() {
                 Ok(data) => {
                     file.write_all(data.as_bytes())?;
-                    return Ok(())
-                },
+                    return Ok(());
+                }
                 Err(err) => warn!("Failed to download {file_url} on try {current_retry}: {err}"),
             },
             _ => warn!(
@@ -60,6 +62,6 @@ pub fn download_file(
     }
     Err(std::io::Error::new(
         std::io::ErrorKind::ConnectionAborted,
-        "Could not download file",
+        "Could not download file?",
     ))
 }

@@ -90,3 +90,11 @@ pub fn get_hash_count(
     let mut sql = connection.prepare(&format!("SELECT COUNT(*) FROM {}", table_name))?;
     sql.query_row([], |row| row.get(0))
 }
+
+pub fn cleanup_table(
+    connection: &mut rusqlite::Connection,
+    table_name: String,
+) -> Result<(), rusqlite::Error> {
+    let _ = connection.execute(&format!("DROP TABLE {}", table_name), [])?;
+    Ok(())
+}

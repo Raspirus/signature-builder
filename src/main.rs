@@ -1,4 +1,4 @@
-use std::{path::Path, process::exit, sync::Arc};
+use std::{fs, path::Path, process::exit, sync::Arc};
 
 use cali::parser::Parser;
 use log::{debug, error, info};
@@ -6,8 +6,8 @@ use log::{debug, error, info};
 use crate::{
     downloader::virusshare::download_all,
     organizer::{
-        database::{create_pool, get_hash_count},
-        files::{cleanup, insert_file, insert_files, patch, write_files},
+        database::{cleanup_table, create_pool, get_hash_count},
+        files::{insert_file, insert_files, patch, write_files},
     },
 };
 
@@ -41,7 +41,9 @@ fn main() -> std::io::Result<()> {
         .add_arg("e", "export", "Exports all hashes from db", false, false)
         .add_arg("if", "insert-file", "Inserts specified file", true, false)
         .add_arg("u", "update", "Fetches and imports", false, false)
-        .add_arg("c", "clean", "Clears the temp dir and the database", false, false)
+        .add_arg("cdb", "clean-database", "Clears the database", false, false)
+        .add_arg("ct", "clean-temp", "Clears the temporary folder", false, false)
+        .add_arg("cd", "clean-data", "Clears the table", false, false)
         .add_arg("p", "patch", "Apply a patch file", true, false)
         .add_arg("n", "numerate", "Returns the number of hashes currently in DB", false, false)
         // processing arguments
@@ -150,10 +152,24 @@ fn main() -> std::io::Result<()> {
 
     let start_time = std::time::Instant::now();
 
-    parser.get_parsed_argument_long("clean").is_some().then(|| {
-        info!("Cleaning database and tmpdir...");
-        cleanup(tmp_dir.clone(), database.clone());
-    });
+    // cleanup
+    if parser.get_parsed_argument_long("clean-database").is_some() {
+        info!("Cleaning database...");
+        fs::remove_file(database.clone())?;
+    }
+
+    if parser.get_parsed_argument_long("clean-temp").is_some() {
+        info!("Cleaning temporary folder...");
+        fs::remove_file(tmp_dir.clone())?;
+    }
+
+    if parser.get_parsed_argument_long("clean-database").is_some() {
+        info!("Cleaning database...");
+        let mut database_connection = create_pool(database.clone(), table_name.clone())
+            .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))?;
+        cleanup_table(&mut database_connection, table_name.clone())
+            .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))?;
+    }
 
     let parsed_arguments = parser.get_parsed_arguments();
     for parsed_argument in parsed_arguments {
