@@ -254,6 +254,7 @@ pub fn set_timestamp(output_dir: String) -> std::io::Result<()> {
         .map_err(|err| std::io::Error::new(std::io::ErrorKind::InvalidData, err))?
         .as_millis();
     let timestamp = Path::new(&output_dir).join("timestamp");
+    info!("Writing timestamp to {}...", timestamp.display());
     if timestamp.exists() {
         fs::remove_file(&timestamp)?;
     }
