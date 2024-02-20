@@ -28,7 +28,6 @@ pub fn download_all(
         }
     };
     info!("Found {filecount} file(s)");
-
     // multithreaded download
     let pool = ThreadPool::new(max_threads)?;
     for file_id in 0..=filecount {
@@ -42,8 +41,9 @@ pub fn download_all(
             };
         });
     }
-    // drop to wait for pool to finish
+    // wait for files to finish downloading
     drop(pool);
+
     info!(
         "Downloaded files in {}s",
         std::time::Instant::now()

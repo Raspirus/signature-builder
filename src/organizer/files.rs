@@ -24,17 +24,11 @@ pub fn insert_file(file_path: String, database: String, table_name: String) -> s
     // reads line by line from file
     for line in reader.lines() {
         // if line starts with # we ignore it, otherwise we push
-        match line {
-            Ok(line) => {
-                if !line.starts_with('#') {
-                    lines.push(line)
-                }
+        if let Ok(line) = line {
+            if !line.starts_with('#') {
+                lines.push(line)
             }
-            Err(err) => {
-                warn!("Could not read line in file {}: {err}", file_path);
-                continue;
-            }
-        };
+        }
     }
 
     info!(
@@ -105,20 +99,11 @@ pub fn insert_files(
             let reader = BufReader::new(file);
             for line in reader.lines() {
                 // if line starts with # we ignore otherwise we push
-                match line {
-                    Ok(line) => {
-                        if !line.starts_with('#') {
-                            lines.push(line)
-                        }
+                if let Ok(line) = line {
+                    if !line.starts_with('#') {
+                        lines.push(line)
                     }
-                    Err(err) => {
-                        warn!(
-                            "Could not read line in file {}: {err}",
-                            reader_path.display()
-                        );
-                        continue;
-                    }
-                };
+                }
             }
         }
 
