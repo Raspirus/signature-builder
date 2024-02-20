@@ -7,7 +7,7 @@ use crate::{
     downloader::virusshare::download_all,
     organizer::{
         database::{cleanup_table, create_pool, get_hash_count},
-        files::{insert_file, insert_files, patch, write_files},
+        files::{insert_file, insert_files, patch, set_timestamp, write_files},
     },
 };
 
@@ -46,6 +46,7 @@ fn main() -> std::io::Result<()> {
         .add_arg("cd", "clean-data", "Clears the table", false, false)
         .add_arg("p", "patch", "Apply a patch file", true, false)
         .add_arg("n", "numerate", "Returns the number of hashes currently in DB", false, false)
+        .add_arg("s", "set-time", "Creates the timestamp in output folder", false, false)
         // processing arguments
         .add_arg("t", "tempdir", "Sets the temporary directory; Defaults to ./tmp", true, true)
         .add_arg("d", "database", "Sets the database name; Defaults to hashes_db", true, true)
@@ -209,6 +210,10 @@ fn main() -> std::io::Result<()> {
                     database.clone(),
                     table_name.clone(),
                 )?;
+                set_timestamp(output_dir.clone())?;
+            }
+            _ if parsed_argument.long_matches("set-time") => {
+                set_timestamp(output_dir.clone())?;
             }
             _ if parsed_argument.long_matches("patch") => {
                 let file_path = parser

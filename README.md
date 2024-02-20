@@ -84,6 +84,12 @@ Returns the number of hashes currently in the database
 
 <p> </p>
 
+`-s`|`--set-time`
+
+Sets the timestamp of the output folder.
+
+<p> </p>
+
 `-t`|`--tempdir` [`foldername`]
 
 Sets the temporary working directory that will be created to `foldername`. Use with caution as it will modify preexisting folders. Useful if you wish to keep multiple working directories or delete a specific one using `-c`. Defaults to `./tmp`

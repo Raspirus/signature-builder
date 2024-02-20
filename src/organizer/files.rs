@@ -2,6 +2,7 @@ use std::{
     fs::{self, DirEntry, File},
     io::{BufRead, BufReader, Write},
     path::Path,
+    time::{SystemTime, UNIX_EPOCH},
 };
 
 use log::{debug, error, info, warn};
@@ -244,4 +245,18 @@ pub fn write_files(
             .as_secs()
     );
     Ok(())
+}
+
+/// writes a timestamp file to the output repository
+pub fn set_timestamp(output_dir: String) -> std::io::Result<()> {
+    let current_timestamp = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_err(|err| std::io::Error::new(std::io::ErrorKind::InvalidData, err))?
+        .as_millis();
+    let timestamp = Path::new(&output_dir).join("timestamp");
+    if timestamp.exists() {
+        fs::remove_file(&timestamp)?;
+    }
+    let mut file = File::create(timestamp)?;
+    file.write_all(format!("{current_timestamp}").as_bytes())
 }
