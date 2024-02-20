@@ -7,7 +7,7 @@ use threadpool_rs::threadpool::pool::ThreadPool;
 
 static URL: &str = "https://virusshare.com/hashfiles/VirusShare_";
 
-/// downlaods all files from provider into output_dir (tmp workfolder)
+/// downloads all files from provider into output_dir (tmp workfolder)
 pub fn download_all(
     output_dir: Arc<PathBuf>,
     max_threads: usize,
