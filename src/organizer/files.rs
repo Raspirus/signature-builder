@@ -18,16 +18,14 @@ pub fn insert_file(file_path: String, database: String, table_name: String) -> s
     let mut database = create_pool(database, table_name.clone())
         .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err.to_string()))?;
 
-    let mut lines: Vec<String> = Vec::new();
     let file = File::open(&file_path)?;
     let reader = BufReader::new(file);
     // reads line by line from file
-    lines.extend(
-        reader
+    let lines = reader
             .lines()
             .map_while(Result::ok)
             .take_while(|line| !line.starts_with('#'))
-    );
+            .collect::<Vec<String>>();
 
     info!(
         "Inserting file {} containing {} hashes into database...",
