@@ -27,7 +27,6 @@ pub fn insert_file(file_path: String, database: String, table_name: String) -> s
             .lines()
             .map_while(Result::ok)
             .take_while(|line| !line.starts_with('#'))
-            .collect::<Vec<String>>(),
     );
 
     info!(
@@ -101,7 +100,6 @@ pub fn insert_files(
                     .lines()
                     .map_while(Result::ok)
                     .take_while(|line| !line.starts_with('#'))
-                    .collect::<Vec<String>>(),
             );
         }
 
