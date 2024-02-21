@@ -22,14 +22,13 @@ pub fn insert_file(file_path: String, database: String, table_name: String) -> s
     let file = File::open(&file_path)?;
     let reader = BufReader::new(file);
     // reads line by line from file
-    for line in reader.lines() {
-        // if line starts with # we ignore it, otherwise we push
-        if let Ok(line) = line {
-            if !line.starts_with('#') {
-                lines.push(line)
-            }
-        }
-    }
+    lines.extend(
+        reader
+            .lines()
+            .map_while(Result::ok)
+            .take_while(|line| !line.starts_with('#'))
+            .collect::<Vec<String>>(),
+    );
 
     info!(
         "Inserting file {} containing {} hashes into database...",
@@ -97,14 +96,13 @@ pub fn insert_files(
                 }
             };
             let reader = BufReader::new(file);
-            for line in reader.lines() {
-                // if line starts with # we ignore otherwise we push
-                if let Ok(line) = line {
-                    if !line.starts_with('#') {
-                        lines.push(line)
-                    }
-                }
-            }
+            lines.extend(
+                reader
+                    .lines()
+                    .map_while(Result::ok)
+                    .take_while(|line| !line.starts_with('#'))
+                    .collect::<Vec<String>>(),
+            );
         }
 
         info!(
@@ -140,8 +138,7 @@ pub fn patch(database: String, table_name: String, file_name: String) -> std::io
     let mut remove = Vec::new();
 
     // we read over each line
-    for line in bufreader.lines() {
-        let line = line?;
+    for line in bufreader.lines().flatten() {
         match line {
             _ if line.starts_with('+') => add.push(line.replacen('+', "", 1).trim().to_owned()),
             _ if line.starts_with('-') => remove.push(line.replacen('-', "", 1).trim().to_owned()),
