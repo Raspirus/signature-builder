@@ -22,7 +22,7 @@ pub fn insert_file(file_path: String, database: String, table_name: String) -> s
     let reader = BufReader::new(file);
     // reads line by line from file
     let mut lines = Vec::new();
-    
+
     reader.lines().flatten().for_each(|line| {
         (!line.starts_with('#')).then(|| lines.push(line));
     });
