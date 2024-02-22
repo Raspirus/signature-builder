@@ -23,7 +23,7 @@ pub fn insert_file(file_path: String, database: String, table_name: String) -> s
     // reads line by line from file
     let lines = reader
         .lines()
-        .map_while(Result::ok)
+        .flatten()
         .take_while(|line| !line.starts_with('#'))
         .collect::<Vec<String>>();
 
@@ -96,7 +96,7 @@ pub fn insert_files(
             lines.extend(
                 reader
                     .lines()
-                    .map_while(Result::ok)
+                    .flatten()
                     .take_while(|line| !line.starts_with('#')),
             );
         }
