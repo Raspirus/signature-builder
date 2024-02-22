@@ -21,11 +21,11 @@ pub fn insert_file(file_path: String, database: String, table_name: String) -> s
     let file = File::open(&file_path)?;
     let reader = BufReader::new(file);
     // reads line by line from file
-    let lines = reader
-        .lines()
-        .flatten()
-        .take_while(|line| !line.starts_with('#'))
-        .collect::<Vec<String>>();
+    let mut lines = Vec::new();
+    
+    for line in reader.lines().flatten() {
+        (!line.starts_with('#')).then(|| lines.push(line));
+    }
 
     info!(
         "Inserting file {} containing {} hashes into database...",
@@ -93,12 +93,9 @@ pub fn insert_files(
                 }
             };
             let reader = BufReader::new(file);
-            lines.extend(
-                reader
-                    .lines()
-                    .flatten()
-                    .take_while(|line| !line.starts_with('#')),
-            );
+            for line in reader.lines().flatten() {
+                (!line.starts_with('#')).then(|| lines.push(line));
+            }
         }
 
         info!(
