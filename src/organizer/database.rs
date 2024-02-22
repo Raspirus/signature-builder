@@ -17,7 +17,7 @@ pub fn create_table(
     table_name: String,
 ) -> Result<(), rusqlite::Error> {
     connection.execute(
-        &format!("CREATE TABLE IF NOT EXISTS {table_name} (hash TEXT NOT NULL)",),
+        &format!("CREATE TABLE IF NOT EXISTS {table_name} (id INTEGER PRIMARY KEY, hash TEXT NOT NULL)",),
         [],
     )?;
     Ok(())
