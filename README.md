@@ -4,7 +4,9 @@ This tool fetches the latest hashes from providers and builds its own files for 
 
 ### Functionality
 
-All the arguments can be combined with eachother. The program goes through them one by one, so the user can declare the order in which operations are executed
+All the arguments can be combined with eachother. The program goes through them one by one, so the user can declare the order in which operations are executed.
+
+The provided hashes on our repo are generated using this command, ran in signature_builder with signatures repo cloned in the same folder: `cargo run --release -- -mc 64 -ct -cdb -u -p ../signatures/patches/patch_1 -dd -o ../signatures/hashes/ -e -s`
 
 <p> </p>
 

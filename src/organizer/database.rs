@@ -1,4 +1,4 @@
-use log::trace;
+use log::{info, trace};
 use rusqlite::params;
 
 /// creates the database connection pool
@@ -28,7 +28,9 @@ pub fn remove_duplicates(
     connection: &rusqlite::Connection,
     table_name: String,
 ) -> Result<(), rusqlite::Error> {
-    connection.execute(&format!("DELETE FROM {table_name} WHERE rowid NOT IN (SELECT MIN(rowid) FROM {table_name} GROUP BY hash)"), [])?;
+    info!("Removing duplicates...");
+    let lines = connection.execute(&format!("DELETE FROM {table_name} WHERE rowid NOT IN (SELECT MIN(rowid) FROM {table_name} GROUP BY hash)"), [])?;
+    info!("Removed {lines} duplicates");
     Ok(())
 }
 
