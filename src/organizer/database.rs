@@ -18,7 +18,7 @@ pub fn create_table(
 ) -> Result<(), rusqlite::Error> {
     connection.execute(
         &format!(
-            "CREATE TABLE IF NOT EXISTS {} (hash TEXT NOT NULL)",
+            "CREATE TABLE IF NOT EXISTS {} (hash TEXT NOT NULL PRIMARY KEY)",
             table_name
         ),
         [],
