@@ -86,7 +86,13 @@ Returns the number of hashes currently in the database
 
 `-s`|`--set-time`
 
-Sets the timestamp of the output folder.
+Sets the timestamp of the output folder
+
+<p> </p>
+
+`-dd`|`--de-dup`
+
+Removes duplicates from table
 
 <p> </p>
 

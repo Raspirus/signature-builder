@@ -6,7 +6,7 @@ use log::{debug, error, info};
 use crate::{
     downloader::virusshare::download_all,
     organizer::{
-        database::{cleanup_table, create_pool, get_hash_count},
+        database::{cleanup_table, create_pool, get_hash_count, remove_duplicates},
         files::{insert_file, insert_files, patch, set_timestamp, write_files},
     },
 };
@@ -47,6 +47,7 @@ fn main() -> std::io::Result<()> {
         .add_arg("p", "patch", "Apply a patch file", true, false)
         .add_arg("n", "numerate", "Returns the number of hashes currently in DB", false, false)
         .add_arg("s", "set-time", "Creates the timestamp in output folder", false, false)
+        .add_arg("dd", "de-dup", "Removes duplicates from table", false, false)
         // processing arguments
         .add_arg("t", "tempdir", "Sets the temporary directory; Defaults to ./tmp", true, true)
         .add_arg("d", "database", "Sets the database name; Defaults to hashes_db", true, true)
@@ -214,6 +215,18 @@ fn main() -> std::io::Result<()> {
             }
             _ if parsed_argument.long_matches("set-time") => {
                 set_timestamp(output_dir.clone())?;
+            }
+            _ if parsed_argument.long_matches("de-dup") => {
+                let database_connection = create_pool(database.clone(), table_name.clone())
+                    .map_err(|err| {
+                        std::io::Error::new(std::io::ErrorKind::Other, err.to_string())
+                    })?;
+                remove_duplicates(&database_connection, table_name.clone()).map_err(|err| {
+                    std::io::Error::new(std::io::ErrorKind::Other, err.to_string())
+                })?;
+                database_connection.close().map_err(|err| {
+                    std::io::Error::new(std::io::ErrorKind::Other, err.1.to_string())
+                })?;
             }
             _ if parsed_argument.long_matches("patch") => {
                 let file_path = parser

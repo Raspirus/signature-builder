@@ -17,12 +17,18 @@ pub fn create_table(
     table_name: String,
 ) -> Result<(), rusqlite::Error> {
     connection.execute(
-        &format!(
-            "CREATE TABLE IF NOT EXISTS {} (hash TEXT NOT NULL PRIMARY KEY)",
-            table_name
-        ),
+        &format!("CREATE TABLE IF NOT EXISTS {table_name} (hash TEXT NOT NULL)",),
         [],
     )?;
+    Ok(())
+}
+
+/// removes duplicates from the table
+pub fn remove_duplicates(
+    connection: &rusqlite::Connection,
+    table_name: String,
+) -> Result<(), rusqlite::Error> {
+    connection.execute(&format!("DELETE FROM {table_name} WHERE rowid NOT IN (SELECT MIN(rowid) FROM {table_name} GROUP BY hash)"), [])?;
     Ok(())
 }
 
